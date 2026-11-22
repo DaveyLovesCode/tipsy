@@ -42,6 +42,7 @@ export const tooltipAnimation = {
   distance: 6,
   scale: 0.9,
   easing: 'cubic-out',
+  moveDuration: 240,
 } satisfies AnimationConfig;
 
 const tooltipShape = {

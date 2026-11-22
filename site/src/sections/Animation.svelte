@@ -14,8 +14,9 @@
   let distance = $state(tooltipAnimation.distance);
   let scale = $state(tooltipAnimation.scale);
   let easing = $state<EasingPreset>(tooltipAnimation.easing);
+  let moveDuration = $state(tooltipAnimation.moveDuration);
 
-  $effect(() => configureTipsy({ animation: { inDuration, outDuration, distance, scale, easing } }));
+  $effect(() => configureTipsy({ animation: { inDuration, outDuration, distance, scale, easing, moveDuration } }));
 
   const easings: EasingPreset[] = ['cubic-out', 'cubic-in', 'cubic-in-out', 'linear'];
 
@@ -26,6 +27,7 @@
     distance: ${distance},
     scale: ${scale},
     easing: '${easing}',
+    moveDuration: ${moveDuration},
   },
 });`);
 </script>
@@ -33,9 +35,10 @@
 <Section {id} {label} title="Set how the bubble appears.">
   {#snippet intro()}
     <p>
-      Five settings: how long the reveal and the hide take, how far the bubble slides, the scale it
-      starts at, and the easing. <code>distance: 0</code> with <code>scale: 1</code> is a plain
-      fade. <code>easing</code> also takes your own function.
+      Six settings: how long the reveal and the hide take, how far the bubble slides, the scale it
+      starts at, the easing, and how long the bubble takes to travel to the next anchor.
+      <code>distance: 0</code> with <code>scale: 1</code> is a plain fade, <code>moveDuration: 0</code>
+      jumps, and <code>easing</code> also takes your own function.
     </p>
     <p>
       This page sets <code>defaultDelay: 0</code>, so its tooltips show at once. The default is
@@ -77,6 +80,14 @@
         <Slider bind:value={scale} min={0.5} max={1} step={0.01} aria-label="Start scale" />
       </label>
 
+      <label class="ctrl">
+        <span class="ctrl-head">
+          <span>Move duration</span>
+          <span class="value">{moveDuration} ms</span>
+        </span>
+        <Slider bind:value={moveDuration} min={0} max={600} aria-label="Move duration" />
+      </label>
+
       <div class="ctrl">
         <span class="ctrl-head">
           <span>Easing</span>
@@ -96,7 +107,7 @@
         </button>
         <button class="demo-btn" use:tooltip={{ text: 'Same settings', kbd: ['↵'] }}>Then me</button>
       </div>
-      <p class="hint">Move a slider, then try the buttons again.</p>
+      <p class="hint">Move a slider, then go from one button to the other.</p>
     </div>
   </div>
 

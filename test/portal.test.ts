@@ -4,7 +4,7 @@ import { configureTipsy, showTooltip } from '../src/index';
 import type { TooltipInput } from '../src/index';
 import { anchor, bubble, enter, frames, leave, portal, shown, wait } from './helpers';
 
-const instant = { inDuration: 0, outDuration: 0 };
+const instant = { inDuration: 0, outDuration: 0, moveDuration: 0 };
 
 /** Shows `input` on an anchor and waits for the bubble to be placed. */
 async function showing(input: TooltipInput, at: Parameters<typeof anchor>[1] = {}) {

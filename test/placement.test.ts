@@ -23,6 +23,15 @@ describe('choosing a side', () => {
     expect(placed.top).toBe(42);
   });
 
+  test('without room it flips across before it goes sideways, however much room the sides have', () => {
+    const anchorRect = rect(100, 2, 40, 30);
+    const wide = placeTooltip({ anchorRect, bounds: rect(0, 0, 1000, 200), tooltipSize: size, preferredPosition: 'top' });
+    expect(wide.position).toBe('bottom');
+    // Neither above nor below fits here, so the roomier side takes it.
+    const strip = placeTooltip({ anchorRect, bounds: rect(0, 0, 1000, 60), tooltipSize: size, preferredPosition: 'top' });
+    expect(strip.position).toBe('right');
+  });
+
   test('the bubble centers on the anchor and sits `gap` away from it', () => {
     const placed = placeTooltip({ anchorRect: rect(450, 330, 100, 40), bounds, tooltipSize: size, gap: 10 });
     expect(placed.left).toBe(500 - 60);

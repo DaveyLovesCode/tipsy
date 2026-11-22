@@ -22,8 +22,9 @@ Most apps need nothing more than that.
 ## What it does
 
 - **One bubble for the whole page.** Anchors don't get their own tooltip elements, so there are no z-index or stacking problems.
-- **Placement.** It measures the room on all four sides, uses your preferred side when it fits, and keeps the bubble inside the viewport or a container you name.
-- **A row of buttons feels quick.** The first hover waits for the delay. Moving to the next anchor within 300 ms shows its tooltip right away.
+- **Placement.** It measures the room on all four sides, uses your preferred side when it fits, flips to the side across from it when it doesn't, and keeps the bubble inside the viewport or a container you name.
+- **A row of buttons feels quick.** The first hover waits for the delay. Moving to the next anchor within 300 ms shows its tooltip right away, and the bubble glides over and reshapes itself on the way.
+- **It moves, never jumps.** When the room runs out and the bubble has to change sides, it swings around its anchor and stays inside the boundary the whole way.
 - **Snippets and shortcut keys.** Any Svelte snippet can be the content, and `kbd` adds shortcut chips after the text.
 - **Typed theme and animation.** Set colors, type, radius and motion with `configureTipsy`. The CSS variables are there too.
 - **Triggers.** `hover`, `focus`, `click` and `manual`, alone or together, plus bubbles the cursor can move into.
@@ -359,7 +360,7 @@ The variables: `--tipsy-bg`, `--tipsy-border`, `--tipsy-color`, `--tipsy-radius`
 
 ## Animation
 
-The bubble fades in while it scales up and slides toward its anchor, then fades out.
+The bubble fades in while it scales up and slides toward its anchor, then fades out. Once it is up it travels: to the next anchor when the pointer moves on, and round its own anchor when it has to change sides.
 
 ```ts
 configureTipsy({
@@ -369,6 +370,7 @@ configureTipsy({
     distance: 8, // px it slides in from; 0 fades only
     scale: 0.63, // starting scale, 0 to 1; 1 does not scale
     easing: 'cubic-out', // 'linear' | 'cubic-out' | 'cubic-in' | 'cubic-in-out', or (t) => number
+    moveDuration: 240, // ms to travel to another anchor or another side; 0 jumps
   },
 });
 ```

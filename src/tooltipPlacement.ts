@@ -56,6 +56,8 @@ export interface TooltipPlacementResult {
 
 const SIDES: TooltipPosition[] = ['top', 'bottom', 'left', 'right'];
 
+const OPPOSITE: Record<TooltipPosition, TooltipPosition> = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' };
+
 const TRANSFORM_ORIGINS: Record<TooltipPosition, string> = {
   top: 'bottom center',
   bottom: 'top center',
@@ -77,8 +79,9 @@ export function getTooltipBoundaryRect(selector: string | null = null): TooltipB
 }
 
 /**
- * Picks the side of the anchor with the most room for the bubble, favoring
- * `preferredPosition` when it fits, and keeps the bubble inside `bounds`.
+ * Picks the side of the anchor the bubble goes on: `preferredPosition` when it
+ * fits, then the side across from it, then whichever has the most room. The
+ * bubble stays inside `bounds`.
  */
 export function placeTooltip({
   anchorRect,
@@ -147,13 +150,10 @@ export function placeTooltip({
     const { left, top, room, required, overflow } = sideGeometry(position);
     const space = Math.max(0, room);
     const fits = required <= space;
-    const score =
-      (fits ? 1_000_000 : 0) +
-      (fits && position === preferredPosition ? 500_000 : 0) +
-      Math.max(0, space - required) * 100 +
-      Math.min(space, required) * 10 -
-      Math.max(0, overflow) * 1000;
-    return { position, left, top, space, fits, score };
+    // A side that fits outranks one that doesn't: the preferred side first, then the one across from it.
+    const rank = !fits ? 0 : position === preferredPosition ? 3 : position === OPPOSITE[preferredPosition] ? 2 : 1;
+    const score = Math.max(0, space - required) * 100 + Math.min(space, required) * 10 - Math.max(0, overflow) * 1000;
+    return { position, left, top, space, fits, rank, score };
   });
 
   if (cursorPoint && !candidates.some((candidate) => candidate.fits)) {
@@ -167,7 +167,7 @@ export function placeTooltip({
     };
   }
 
-  const best = candidates.sort((a, b) => b.score - a.score || b.space - a.space)[0];
+  const best = candidates.sort((a, b) => b.rank - a.rank || b.score - a.score || b.space - a.space)[0];
   return {
     ...within(best.left, best.top),
     position: best.position,

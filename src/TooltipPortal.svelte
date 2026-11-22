@@ -3,9 +3,14 @@
   import { configVersion, mergeTheme, modeToCssVars, resolveEasing, runtimeConfig, themeToCssVars } from './config';
   import type { AnimationConfig, ThemeConfig } from './config';
   import { TIPSY_BUBBLE_ID } from './tooltip';
+  import { createTooltipMotion } from './tooltipMotion';
+  import type { TooltipMotionFrame } from './tooltipMotion';
   import { getTooltipBoundaryRect, placeTooltip } from './tooltipPlacement';
   import type { TooltipBounds, TooltipPlacementResult, TooltipPosition, TooltipRect } from './tooltipPlacement';
   import { cancelPendingHide, forceHideTooltip, hideTooltip, tooltipStore } from './tooltipStore';
+
+  /** What the placement decides besides where: the motion owns that. */
+  type Placement = Omit<TooltipPlacementResult, 'left' | 'top'>;
 
   /** Each prop overrides the global config for this portal. */
   interface Props {
@@ -69,13 +74,23 @@
   const themeStyle = $derived(themeToCssVars(settings.theme));
   const modeStyle = $derived(modeToCssVars(mode, settings.theme));
 
+  // One layer per owner, so a tooltip taking over from another cross-fades with it
+  // while an update to the same one changes in place.
+  const layers = $derived([{ key: ownerId ?? 0, text, content, kbd }]);
+
   // The bubble renders twice: once off screen to be measured, then where that size fits.
   let measureEl = $state<HTMLDivElement | null>(null);
-  let placement = $state<TooltipPlacementResult | null>(null);
+  let placement = $state<Placement | null>(null);
+  /** Where the bubble is drawn this frame, in the document. */
+  let box = $state<TooltipMotionFrame | null>(null);
+  /** The measured width of the content, which holds its layout while the bubble changes size. */
+  let contentWidth = $state(0);
+  const motion = createTooltipMotion();
 
   $effect(() => {
     if (!shown) {
       placement = null;
+      motion.release(performance.now() + settings.animation.outDuration);
       return;
     }
 
@@ -92,26 +107,41 @@
       }
 
       const { width, height } = measureEl.getBoundingClientRect();
-      const placed = placeTooltip({
+      const space = gap ?? runtimeConfig.gap;
+      const edge = edgePadding ?? runtimeConfig.edgePadding;
+      const { left, top, ...placed } = placeTooltip({
         anchorRect: anchor,
         bounds,
         cursorPoint,
         preferredPosition: position,
         followCursor,
         tooltipSize: { width, height },
-        gap: gap ?? undefined,
-        edgePadding: edgePadding ?? undefined,
+        gap: space,
+        edgePadding: edge,
       });
-      // The shell is positioned in the document, so viewport coordinates gain the scroll offset.
       const next = {
         ...placed,
-        left: snapToDevicePixel(placed.left + window.scrollX),
-        top: snapToDevicePixel(placed.top + window.scrollY),
         maxWidth: snapToDevicePixel(placed.maxWidth),
         maxHeight: snapToDevicePixel(placed.maxHeight),
       };
+      if (!placement || !same(placement, next)) placement = next;
 
-      if (!placement || !samePlacement(placement, next)) placement = next;
+      const moved = motion.step(
+        { left, top, width, height, position: placed.position, ownerId: owner },
+        {
+          anchor: anchor!,
+          area: { left: bounds.left + edge, top: bounds.top + edge, right: bounds.right - edge, bottom: bounds.bottom - edge },
+          gap: space,
+          duration: settings.animation.moveDuration,
+          now: performance.now(),
+        },
+      );
+      // The shell is positioned in the document, so viewport coordinates gain the scroll
+      // offset. At rest it sits on a device pixel, which keeps the text sharp.
+      const settle = moved.moving ? (value: number) => value : snapToDevicePixel;
+      const drawn = { ...moved, left: settle(moved.left + window.scrollX), top: settle(moved.top + window.scrollY) };
+      if (!box || !same(box, drawn)) box = drawn;
+      contentWidth = measureEl.firstElementChild?.getBoundingClientRect().width ?? 0;
       frame = requestAnimationFrame(place);
     });
 
@@ -158,8 +188,8 @@
     return Math.round(value * ratio) / ratio;
   }
 
-  function samePlacement(a: TooltipPlacementResult, b: TooltipPlacementResult): boolean {
-    return (Object.keys(a) as Array<keyof TooltipPlacementResult>).every((key) => a[key] === b[key]);
+  function same<T extends object>(a: T, b: T): boolean {
+    return (Object.keys(a) as Array<keyof T>).every((key) => a[key] === b[key]);
   }
 
   /** Whether any of `rect` is inside `bounds`. A rect without size counts as the point it sits on. */
@@ -179,15 +209,15 @@
   }
 </script>
 
-{#snippet bubble()}
-  {#if content}
-    {@render content()}
-  {:else if hasText}
-    <span class="tipsy-text">{text}</span>
+{#snippet body(layer: (typeof layers)[number])}
+  {#if layer.content}
+    {@render layer.content()}
+  {:else if layer.text}
+    <span class="tipsy-text">{layer.text}</span>
   {/if}
-  {#if kbd && kbd.length > 0}
+  {#if layer.kbd && layer.kbd.length > 0}
     <span class="tipsy-kbd-list">
-      {#each kbd as token}
+      {#each layer.kbd as token}
         <kbd class="tipsy-kbd">{token}</kbd>
       {/each}
     </span>
@@ -203,15 +233,15 @@
     data-mode={mode}
     style="max-width: {maxWidth}px; {themeStyle} {modeStyle} {style}"
   >
-    {@render bubble()}
+    <div class="tipsy-content">{@render body(layers[0])}</div>
   </div>
 {/if}
 
-{#if placement && shown}
-  <div
-    class="tipsy-shell"
-    style="transform: translate3d({placement.left}px, {placement.top}px, 0); {themeStyle} {modeStyle}"
-  >
+{#if placement && box && shown}
+  {@const sized = box.moving
+    ? `width: ${box.width}px; height: ${box.height}px; grid-template-columns: ${contentWidth}px;`
+    : ''}
+  <div class="tipsy-shell" style="transform: translate3d({box.left}px, {box.top}px, 0); {themeStyle} {modeStyle}">
     <div
       id={TIPSY_BUBBLE_ID}
       class="tipsy-tooltip {className}"
@@ -219,14 +249,22 @@
       class:tipsy-interactive={interactive}
       data-mode={mode}
       data-position={placement.position}
-      style="transform-origin: {placement.transformOrigin}; max-width: {Math.min(placement.maxWidth, maxWidth)}px; max-height: {placement.maxHeight}px; {style}"
+      style="transform-origin: {placement.transformOrigin}; max-width: {Math.min(placement.maxWidth, maxWidth)}px; max-height: {placement.maxHeight}px; {sized} {style}"
       role="tooltip"
       onmouseenter={onBubbleEnter}
       onmouseleave={onBubbleLeave}
       in:reveal={{ side: placement.position }}
       out:fade={{ duration: settings.animation.outDuration }}
     >
-      {@render bubble()}
+      {#each layers as layer (layer.key)}
+        <div
+          class="tipsy-content"
+          in:fade={{ duration: settings.animation.moveDuration * 0.6 }}
+          out:fade={{ duration: settings.animation.moveDuration * 0.4 }}
+        >
+          {@render body(layer)}
+        </div>
+      {/each}
     </div>
   </div>
 {/if}
@@ -243,9 +281,9 @@
 
   .tipsy-tooltip {
     pointer-events: none;
-    display: flex;
-    align-items: center;
-    gap: var(--tipsy-gap-inline, 6px);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
     box-sizing: border-box;
     overflow: hidden;
     padding: var(--tipsy-padding, 4px 8px);
@@ -271,6 +309,15 @@
     top: 0;
     left: -9999px;
     visibility: hidden;
+  }
+
+  /* Every layer shares the one cell, so two can cross-fade. */
+  .tipsy-content {
+    grid-area: 1 / 1;
+    display: flex;
+    align-items: center;
+    gap: var(--tipsy-gap-inline, 6px);
+    min-width: 0;
   }
 
   .tipsy-text {

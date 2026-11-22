@@ -19,6 +19,11 @@ export interface AnimationConfig {
   scale: number;
   /** Easing of the reveal: a preset name or your own function. */
   easing: Easing;
+  /**
+   * Ms the bubble takes to travel to the next anchor, or round to another side
+   * of its own. 0 jumps.
+   */
+  moveDuration: number;
 }
 
 export interface ModeStyle {
@@ -134,6 +139,7 @@ export const runtimeConfig: TipsyRuntimeConfig = {
     distance: 8,
     scale: 0.63,
     easing: 'cubic-out',
+    moveDuration: 240,
   },
   theme: {
     modes: {
