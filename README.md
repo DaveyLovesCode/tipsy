@@ -1,6 +1,6 @@
 # Tipsy
 
-[![Watch the Tipsy trailer](media/trailer-poster.jpg)](media/trailer.mp4)
+https://github.com/user-attachments/assets/a8ad0bdd-2cdc-4e0f-b813-14151839e369
 
 Tooltips for Svelte 5. [Try every example on the demo site](https://daveylovescode.github.io/tipsy/).
 
