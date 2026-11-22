@@ -1,5 +1,7 @@
 # Tipsy
 
+<video src="https://github.com/DaveyLovesCode/tipsy/raw/main/media/trailer.mp4" autoplay muted loop playsinline width="100%"></video>
+
 Tooltips for Svelte 5. [Try every example on the demo site](https://daveylovescode.github.io/tipsy/).
 
 Mount one `<TooltipPortal />` at the root and put `use:tooltip` on any element. The bubble goes on the side that has room and shows text, shortcut keys or a Svelte snippet. No dependencies besides Svelte.
