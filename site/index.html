@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tipsy: tooltips for Svelte 5</title>
+    <meta
+      name="description"
+      content="A tooltip library for Svelte 5. One portal and one action, placement that picks the side with room, snippet content, kbd chips and a typed theme."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Tipsy: tooltips for Svelte 5" />
+    <meta
+      property="og:description"
+      content="A tooltip library for Svelte 5. One portal and one action, placement that picks the side with room, snippet content, kbd chips and a typed theme."
+    />
+    <meta property="og:url" content="https://daveylovescode.github.io/tipsy/" />
+    <meta property="og:image" content="https://daveylovescode.github.io/tipsy/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://daveylovescode.github.io/tipsy/og.png" />
+    <!-- Sets the theme before the first paint: a ?theme= link, then the saved choice, then the system's. -->
+    <script>
+      (function () {
+        var isMode = function (value) {
+          return value === 'light' || value === 'dark';
+        };
+        var mode = new URLSearchParams(location.search).get('theme');
+        if (!isMode(mode)) {
+          try {
+            mode = localStorage.getItem('tipsy-site-theme');
+          } catch (e) {
+            /* storage blocked */
+          }
+        }
+        if (!isMode(mode)) mode = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', mode);
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=Geist+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <!-- The wordmark's five letters. -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800&text=tipsy&display=swap" rel="stylesheet" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%237559ff' fill-rule='evenodd' d='M11 4h10a8 8 0 0 1 8 8v2a8 8 0 0 1-8 8h-4l-2.7 5.4a.34.34 0 0 1-.6 0L11 22a8 8 0 0 1-8-8v-2a8 8 0 0 1 8-8Zm-1 9a2 2 0 1 0 4 0a2 2 0 1 0-4 0Zm8 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0Z'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
