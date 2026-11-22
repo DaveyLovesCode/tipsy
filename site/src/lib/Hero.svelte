@@ -1,52 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { get } from 'svelte/store';
-  import { tooltip, tooltipStore } from 'tipsy';
-  import Code from './Code.svelte';
   import Install from './Install.svelte';
-  import { REPO_URL } from './project';
-
-  const snippet = `<script lang="ts">
-  import { TooltipPortal, tooltip } from 'tipsy';
-<\/script>
-
-<button use:tooltip={'Run the tests'}>Run</button>
-
-<button use:tooltip={{ text: 'Send', kbd: ['⌘', '⏎'] }}>
-  Send
-</button>
-
-<TooltipPortal />`;
-
-  let result = $state<HTMLDivElement | null>(null);
-  /** Holds the Send tooltip open for a moment once the buttons are on screen, so the page opens on a real tooltip. */
-  let preview = $state(false);
-
-  onMount(() => {
-    const timers: ReturnType<typeof setTimeout>[] = [];
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        observer.disconnect();
-        timers.push(
-          setTimeout(() => {
-            // Someone already reading a tooltip keeps it.
-            if (get(tooltipStore).visible) return;
-            preview = true;
-            timers.push(setTimeout(() => (preview = false), 2600));
-          }, 600),
-        );
-      },
-      { threshold: 1 },
-    );
-    if (result) observer.observe(result);
-
-    return () => {
-      observer.disconnect();
-      timers.forEach(clearTimeout);
-    };
-  });
+  import { REPO_URL, TRAILER_POSTER_URL, TRAILER_URL } from './project';
 
   function jumpToQuickStart(e: MouseEvent) {
     e.preventDefault();
@@ -78,19 +32,16 @@
       </p>
     </div>
 
-    <div class="example">
-      <Code code={snippet} label="App.svelte" />
-      <div class="result live" bind:this={result}>
-        <button class="demo-btn" use:tooltip={'Run the tests'}>Run</button>
-        <button
-          class="demo-btn"
-          data-tone="accent"
-          use:tooltip={{ text: 'Send', kbd: ['⌘', '⏎'], show: preview || undefined }}
-        >
-          Send
-        </button>
-      </div>
-    </div>
+    <video
+      class="film"
+      src={TRAILER_URL}
+      poster={TRAILER_POSTER_URL}
+      autoplay
+      muted
+      loop
+      playsinline
+      aria-label="Tipsy's tooltips gliding between buttons, flipping sides and changing theme"
+    ></video>
   </div>
 </header>
 
@@ -102,7 +53,7 @@
 
   .inner {
     display: grid;
-    grid-template-columns: 1.1fr minmax(0, 1fr);
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
     gap: clamp(40px, 6vw, 88px);
     align-items: center;
   }
@@ -147,26 +98,12 @@
     font-size: 13px;
   }
 
-  /* The code and what it renders, as one card. */
-  .example {
-    min-width: 0;
-    border: 1px solid var(--line);
+  .film {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
     border-radius: var(--r);
-    overflow: hidden;
-  }
-
-  .example :global(.code) {
-    border: 0;
-    border-radius: 0;
-  }
-
-  .result {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 28px 20px;
-    border-top: 1px solid var(--line);
-    background-color: var(--bg-raised);
+    background: #050506;
+    box-shadow: 0 0 0 1px var(--line), 0 24px 60px rgb(0 0 0 / 0.16);
   }
 </style>
