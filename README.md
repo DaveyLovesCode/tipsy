@@ -1,6 +1,6 @@
 # Tipsy
 
-<video src="https://github.com/DaveyLovesCode/tipsy/raw/main/media/trailer.mp4" autoplay muted loop playsinline width="100%"></video>
+[![Watch the Tipsy trailer](media/trailer-poster.jpg)](media/trailer.mp4)
 
 Tooltips for Svelte 5. [Try every example on the demo site](https://daveylovescode.github.io/tipsy/).
 
